@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Timer application</title>
+<script src='/js/server.js'></script>
+<script src='/js/jquery-2.1.1.min.js'></script>
+<script type="text/javascript">
+	var websocketServerUrl = websocketServerConfig.protocol + websocketServerConfig.host +":"+ websocketServerConfig.port;
+	var httpServerUrl = httpServerConfig.protocol+httpServerConfig.host+":"+httpServerConfig.port;
+	
+	var connection;
+	
+	function connectToWebsocketServer() {
+		 connection = new WebSocket(websocketServerUrl, ['time-protocol']);
+		 if (connection == undefined)
+        	alert('not able to connect to websocket server');
+         else {
+         	connection.onopen = function() {
+         		alert('Websocket connection open');
+         	}
+         	
+         	connection.onclose = function() {
+         		alert('websocket connection closed');
+         	}
+         	
+         	connection.onmessage = function (message) {
+         		var json = JSON.parse(message.data);
+         		 if(json.status) {
+         			alert(json.message);
+         			return;
+         		}
+         		document.getElementById('time').innerHTML = message.data + " Updated by websocket";
+         	}
+         }	
+	}
+	
+	function getTime() {
+	     	var timezone = document.getElementById("timezone").value;
+			var url = httpServerUrl+"/time";
+			
+			if(timezone != "" && !timezoneValidator(timezone)) {
+			 	alert("Please enter a valid timezone EX. +01, -02 etc.");
+			 	return;
+			}
+			
+			if(timezone != "") {
+				url = url+"?timezone="+timezone;
+			}
+	
+			$.ajax({
+		  	   type: "GET",
+		  	   dataType: "json",
+		  	   url: url,
+		  	   success: onSuccess,
+		  	   error: onError
+  			});
+  			
+  			function onSuccess(data, textStatus, jqXHR) {
+  				document.getElementById('time').innerHTML = jqXHR.responseText + " Updated by GET Request";
+  			}
+  			
+  			function onError(jqXHR, errorType, exObj) {
+  				if(jqXHR.responseText) {
+  					alert(jqXHR.responseText);
+  				} else {
+  					alert("Cannot get time data from "+url);
+  				}
+  			}
+	}
+	
+	function postTimezoneViaHttpRequest() {
+			 var timezone = document.getElementById("timezone").value;
+			 if(!timezoneValidator(timezone)) {
+			 	alert("Please enter a valid timezone EX. +01, -02 etc.");
+			 	return;
+			 }
+	
+			 var data = {'timezone':timezone};
+			 $.ajax({
+	    	    type: "POST",
+	    	    dataType: "json",
+	    	    url: httpServerUrl+"/timezone",
+	    	    data: data,
+	    	    success: onSuccess,
+	    	    error: onError
+	    	});
+	    	
+	    	function onSuccess(data, textStatus, jqXHR) {
+  				alert(jqXHR.responseText);
+  			}
+  			
+  			function onError(jqXHR, errorType, exObj) {
+  				if(jqXHR.responseText) {
+  					alert(jqXHR.responseText);
+  				} else {
+  					alert("Cannot post timezone to "+httpServerUrl+"/timezone");
+  				}
+  			}
+	}
+	
+	function postTimezoneViaWebsocket() {
+		   var timezone = document.getElementById("timezone").value;
+		   if(!timezoneValidator(timezone)) {
+			 	alert("Please enter a valid timezone EX. +01, -02 etc.");
+			 	return;
+		   }
+		   
+		   connection.send(JSON.stringify({action: 'setTimezone','timezone':timezone}));
+	}
+	
+	function timezoneValidator(timezone) {
+		var timezoneRegex = /^[+-]{1}\d\d$/;
+		if(timezone == undefined || !timezoneRegex.test(timezone)) 
+			return false;
+		else
+			return true;	
+	}
+</script>
+
+</head>
+<body onload='connectToWebsocketServer();'>
+<div id="time"></div>
+Please Enter timezone: <input type="text" id="timezone"></br>
+<button onclick="getTime()">GET Time</button><br/>
+<button onclick="postTimezoneViaHttpRequest()">SET Timezone via HTTP POST</button><br/>
+<button onclick="postTimezoneViaWebsocket()">SET Timezone via Websocket</button>
+</body>
+</html>

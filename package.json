@@ -1,0 +1,11 @@
+{
+  "name": "node-time-server",
+  "version": "0.1.0",
+  "description": "A node.js application for getting time and setting time zone via REST/Websocket API's",
+  "author": "Abhijit Baldawa",
+  "readmeFilename": "README.md",
+  "dependencies": {
+	  "express": "3.2.6",
+	  "websocket": "1.0.19"
+  }
+}

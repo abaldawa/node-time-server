@@ -1,0 +1,14 @@
+{
+	"http-server": 
+	{
+      "protocol" : "http://",
+      "host" : "localhost",
+      "port" : 8080
+	},
+	"websocket-server":
+	{
+	  "protocol" : "ws://",
+	  "host" : "localhost",
+	  "port" : 8080	
+	}
+}
